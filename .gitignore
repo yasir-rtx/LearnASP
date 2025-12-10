@@ -1,0 +1,43 @@
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+
+# OS generated files
+*.DS_Store
+Thumbs.db
+
+# Visual Studio cache
+.vs/
+.vscode/
+
+# NuGet packages (optional, jika restore otomatis)
+packages/
+
+# Backup & publish files
+*.bak
+*.swp
+*.pubxml
+*.publishproj
+
+# Resharper / Rider
+_ReSharper*/
+*.DotSettings.user
+
+# Static web assets cache (Blazor)
+**/staticwebassets/
+
+# Test results
+TestResult*/
+*.trx
+*.coverage
+*.coveragexml
