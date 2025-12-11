@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using LearnASP.Models;
+using Microsoft.EntityFrameworkCore;
 using Obscura.Models;
 
 namespace LearnASP.Data
@@ -14,10 +15,14 @@ namespace LearnASP.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Book Entity Configuration
             modelBuilder.Entity<Book>(entity =>
             {
                 entity.ToTable("Books");
+                // Primary Key
                 entity.HasKey(book => book.Id);
+
+                // Properties
                 entity.Property(book => book.Title)
                       .IsRequired()
                       .HasMaxLength(200);
@@ -48,6 +53,49 @@ namespace LearnASP.Data
                         .IsRequired();
                 entity.Property(book => book.IsForSale)
                         .IsRequired();
+
+                // Foreign Key Relationship many to one with Author
+                entity.HasOne(book => book.Author)
+                        .WithMany(author => author.Books)
+                        .HasForeignKey(book => book.AuthorId);
+
+            });
+
+            // Author Entity Configuration
+            modelBuilder.Entity<Author>(author =>
+            {
+                author.ToTable("Authors");
+
+                author.HasKey(author => author.Id);
+
+                author.Property(author => author.FullName)
+                      .IsRequired()
+                      .HasMaxLength(100);
+
+                author.Property(author => author.Biography)
+                      .HasMaxLength(2000);
+
+                author.Property(author => author.Nationality)
+                      .HasMaxLength(100);
+
+                author.Property(author => author.CreatedAt)
+                      .HasDefaultValueSql("GETUTCDATE()");
+
+                author.Property(author => author.CreatedBy)
+                      .HasDefaultValue(1);
+
+                author.Property(author => author.UpdatedBy)
+                      .HasDefaultValue(1);
+
+                author.Property(author => author.IsDeleted)
+                      .HasDefaultValue(false);
+
+                author.HasQueryFilter(author => !author.IsDeleted);
+
+                // Foreign Key Relationship one to many with Book
+                author.HasMany(author => author.Books)
+                      .WithOne(book => book.Author)
+                      .HasForeignKey(book => book.AuthorId);
             });
         }
 
