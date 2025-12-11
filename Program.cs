@@ -1,11 +1,21 @@
+﻿using LearnASP.Data;
 using Microsoft.EntityFrameworkCore;
 using Obscura.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDbContext<BookDb>(opt => opt.UseInMemoryDatabase("TodoList"));
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-//Middeleware Swagger Configuration
+// Get String Connection
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// In Memory Database
+//builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("ObscuraDB"));
+//builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+// Register DbContext
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// Middeleware Swagger Configuration
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApiDocument(config =>
 {
@@ -15,6 +25,29 @@ builder.Services.AddOpenApiDocument(config =>
 });
 
 var app = builder.Build();
+
+// Validate DB connection at startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        if (db.Database.CanConnect())
+        {
+            Console.WriteLine("Database connection successful.");
+        }
+        else
+        {
+            Console.WriteLine("Cannot connect to database.");
+            throw new Exception("Database connection failed.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database connection error: {ex.Message}");
+        throw; // stop app if DB is unreachable
+    }
+}
 
 // Enable Swagger Middleware
 if (app.Environment.IsDevelopment())
@@ -29,56 +62,66 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// API MapGroups Configuration
+var books = app.MapGroup("/books");
+
+books.MapGet("/", GetAllBooks);
+books.MapGet("/{id}", GetBook);
+books.MapPost("/", PostBook);
+books.MapPut("/{id}", UpdateBook);
+books.MapDelete("/{id}", DeleteBook);
+
+// Run the application
+app.Run();
+
 // Get All Books
-app.MapGet("/books", async (BookDb db) =>
-    await db.Books.ToListAsync());
+static async Task<IResult> GetAllBooks(AppDbContext db)
+{
+    return TypedResults.Ok(await db.Books.ToListAsync());
+}
 
 // Get A Book By Id
-app.MapGet("/books/{id}", async (int id, BookDb db) =>
-    await db.Books.FindAsync(id)
-        is Book book
-            ? Results.Ok(book)
-            : Results.NotFound());
+static async Task<IResult> GetBook(int id, AppDbContext db)
+{
+    var book = await db.Books.FindAsync(id);
+    return book is null ? TypedResults.NotFound() : TypedResults.Ok(book);
+}
 
 // Post A New Book
-app.MapPost("/books", async (Book book, BookDb db) =>
+static async Task<IResult> PostBook(Book book, AppDbContext db)
 {
     db.Books.Add(book);
     await db.SaveChangesAsync();
 
     // Give response to client
-    return Results.Created($"/books/{book.Id}", book);
-});
-
+    return TypedResults.Created($"/books/{book.Id}", book);
+}
 
 // Update an existing Book
-app.MapPut("/books/{id}", async (int id, Book inputBook, BookDb db) =>
+static async Task<IResult> UpdateBook(int id, Book inputBook, AppDbContext db)
 {
     var book = await db.Books.FindAsync(id);
 
     // if todo is not found
-    if (book is null) return Results.NotFound();
+    if (book is null) return TypedResults.NotFound();
 
     book.Title = inputBook.Title;
     book.IsAvailable = inputBook.IsAvailable;
 
     await db.SaveChangesAsync();
 
-    return Results.NoContent();
-});
+    return TypedResults.NoContent();
+}
 
 // Delete a Book
-app.MapDelete("/books/{id}", async (int id, BookDb db) =>
+static async Task<IResult> DeleteBook(int id, AppDbContext db)
 {
-    if (await db.Books.FindAsync(id) is Book todo)
+    if (await db.Books.FindAsync(id) is Book book)
     {
-        db.Books.Remove(todo);
+        db.Books.Remove(book);
         await db.SaveChangesAsync();
-        return Results.NoContent();
+        return TypedResults.NoContent();
     }
 
-    return Results.NotFound();
-});
-
-// Run the application
-app.Run();
+    return TypedResults.NotFound();
+}
