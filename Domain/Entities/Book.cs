@@ -1,6 +1,4 @@
-﻿using LearnASP.Models;
-
-namespace Obscura.Models
+﻿namespace LearnASP.Domain.Entities
 {
     public class Book
     {
@@ -18,10 +16,10 @@ namespace Obscura.Models
         public bool IsForSale { get; set; } = true;
 
         // Foreign key
-        public int AuthorId { get; set; }
+        public int? AuthorId { get; set; }
 
         // Navigation property
-        public Author Author { get; set; } = null!;
+        public Author? Author { get; set; } = null!;
 
     }
 }

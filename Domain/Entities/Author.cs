@@ -1,6 +1,4 @@
-﻿using Obscura.Models;
-
-namespace LearnASP.Models
+﻿namespace LearnASP.Domain.Entities
 {
     public class Author
     {

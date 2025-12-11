@@ -1,6 +1,6 @@
-﻿using LearnASP.Data;
+﻿using LearnASP.Domain.Entities;
+using LearnASP.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
-using Obscura.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
