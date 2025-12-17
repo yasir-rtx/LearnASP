@@ -15,6 +15,12 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// Register Controllers Layer
+builder.Services.AddControllers();
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 // Middeleware Swagger Configuration
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApiDocument(config =>
@@ -65,63 +71,8 @@ if (app.Environment.IsDevelopment())
 // API MapGroups Configuration
 var books = app.MapGroup("/books");
 
-books.MapGet("/", GetAllBooks);
-books.MapGet("/{id}", GetBook);
-books.MapPost("/", PostBook);
-books.MapPut("/{id}", UpdateBook);
-books.MapDelete("/{id}", DeleteBook);
+// Controllers Routing Middleware
+app.MapControllers();
 
 // Run the application
 app.Run();
-
-// Get All Books
-static async Task<IResult> GetAllBooks(AppDbContext db)
-{
-    return TypedResults.Ok(await db.Books.ToListAsync());
-}
-
-// Get A Book By Id
-static async Task<IResult> GetBook(int id, AppDbContext db)
-{
-    var book = await db.Books.FindAsync(id);
-    return book is null ? TypedResults.NotFound() : TypedResults.Ok(book);
-}
-
-// Post A New Book
-static async Task<IResult> PostBook(Book book, AppDbContext db)
-{
-    db.Books.Add(book);
-    await db.SaveChangesAsync();
-
-    // Give response to client
-    return TypedResults.Created($"/books/{book.Id}", book);
-}
-
-// Update an existing Book
-static async Task<IResult> UpdateBook(int id, Book inputBook, AppDbContext db)
-{
-    var book = await db.Books.FindAsync(id);
-
-    // if todo is not found
-    if (book is null) return TypedResults.NotFound();
-
-    book.Title = inputBook.Title;
-    book.IsAvailable = inputBook.IsAvailable;
-
-    await db.SaveChangesAsync();
-
-    return TypedResults.NoContent();
-}
-
-// Delete a Book
-static async Task<IResult> DeleteBook(int id, AppDbContext db)
-{
-    if (await db.Books.FindAsync(id) is Book book)
-    {
-        db.Books.Remove(book);
-        await db.SaveChangesAsync();
-        return TypedResults.NoContent();
-    }
-
-    return TypedResults.NotFound();
-}
