@@ -1,15 +1,21 @@
-﻿using LearnASP.Domain.Entities;
+﻿using DotNetEnv;
+using LearnASP.Domain.Entities;
 using LearnASP.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-var builder = WebApplication.CreateBuilder(args);
+Env.Load();
 
-// Get String Connection
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var builder = WebApplication.CreateBuilder(args);
 
 // In Memory Database
 //builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("ObscuraDB"));
 //builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+// Reading Environment Variables
+builder.Configuration.AddEnvironmentVariables();
+
+// Get String Connection
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // Register DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
