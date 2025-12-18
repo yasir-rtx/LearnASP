@@ -1,7 +1,9 @@
 ﻿using DotNetEnv;
+using System.Text.Json;
 using LearnASP.Domain.Entities;
 using LearnASP.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,7 +67,12 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Database HealtCheck
 builder.Services.AddHealthChecks()
-    .AddSqlServer(connectionString);
+    .AddSqlServer(
+        connectionString,
+        name: "sqlserver",
+        timeout: TimeSpan.FromSeconds(5),
+        tags: new[] { "db", "sql" }
+    );
 
 // Middeleware Swagger Configuration
 builder.Services.AddEndpointsApiExplorer();
@@ -101,8 +108,28 @@ app.MapControllers();
 var books = app.MapGroup("/books");
 
 // Database Health Check Endpoint
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
 
+        var result = new
+        {
+            status = report.Status.ToString(),
+            database = dbName,
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                description = entry.Value.Description,
+                error = entry.Value.Exception?.Message
+            })
+        };
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(result));
+    }
+});
 
 // Run the application
 app.Run();
