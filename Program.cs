@@ -2,6 +2,8 @@
 using System.Text.Json;
 using LearnASP.Domain.Entities;
 using LearnASP.Infrastructure.Data;
+using LearnASP.Application.Services;
+using LearnASP.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
@@ -61,6 +63,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Register Controllers Layer
 builder.Services.AddControllers();
+
+// Register Services & Interfaces Layer
+builder.Services.AddScoped<
+    LearnASP.Application.Interfaces.IAuthorService,
+    LearnASP.Application.Services.Authors.AuthorService>();
 
 // Register AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
