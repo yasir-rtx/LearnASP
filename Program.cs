@@ -50,13 +50,13 @@ var connectionString = $"Server={dbHost},{dbPort};Database={dbName};User Id={dbU
 //     options.UseSqlServer(connectionString));
 // Best Practice based on gpt
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString, sql =>
-{
+    options.UseSqlServer(connectionString, sql => {
     sql.EnableRetryOnFailure(
         maxRetryCount: 5,
         maxRetryDelay: TimeSpan.FromSeconds(10),
         errorNumbersToAdd: null
     );
+    sql.MigrationsAssembly("LearnASP.Infrastructure");
 }));
 
 // Register Controllers Layer
