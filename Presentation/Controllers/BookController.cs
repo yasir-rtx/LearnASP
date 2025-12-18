@@ -25,7 +25,7 @@ namespace LearnASP.Presentation.Controllers
             _mapper = mapper;
         }
 
-        // Get All Books
+        /// <summary> Get All Books </summary>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BookDto>>> GetAllBooks()
         {
@@ -35,7 +35,7 @@ namespace LearnASP.Presentation.Controllers
             return books is null ? NotFound() : Ok(_mapper.Map<IEnumerable<BookDto>>(books));
         }
 
-        // Get A Book By Id
+        /// <summary> Get A Book By Id </summary>
         [HttpGet("{id}")]
         public async Task<ActionResult<Book>> GetBookById(int id)
         {
@@ -43,7 +43,7 @@ namespace LearnASP.Presentation.Controllers
             return book is null ? NotFound() : Ok(_mapper.Map<BookDto>(book));
         }
 
-        // Post A New Book
+        /// <summary> Post A New Book </summary>
         [HttpPost]
         public async Task<ActionResult<Book>> CreateBook([FromBody] CreateBookRequest request, CancellationToken cancellationToken)
         {
@@ -59,7 +59,7 @@ namespace LearnASP.Presentation.Controllers
             return CreatedAtAction(nameof(GetBookById), new { id = book.Id }, bookDto);
         }
 
-        // Update an Existing Book
+        /// <summary> Update an Existing Book </summary>
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateBook(int id, [FromBody] UpdateBookRequest request, CancellationToken cancellationToken)
         {
@@ -81,7 +81,7 @@ namespace LearnASP.Presentation.Controllers
             });
         }
 
-        // Delete a Book
+        /// <summary> Delete a Book </summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBook(int id)
         {

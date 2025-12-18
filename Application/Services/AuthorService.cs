@@ -5,7 +5,7 @@ using LearnASP.Domain.Entities;
 using LearnASP.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace LearnASP.Application.Services.Authors
+namespace LearnASP.Application.Services
 {
     public class AuthorService : IAuthorService
     {
@@ -61,16 +61,13 @@ namespace LearnASP.Application.Services.Authors
             author.UpdatedBy = 1; // TODO: ambil dari user yang sedang login
 
             await _db.SaveChangesAsync(cancellationToken);
-
-            var updateDto = _mapper.Map<AuthorDto>(author);
-
             return _mapper.Map<AuthorDto>(author);
         }
 
         public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var author = await _db.Authors
-                .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(author => author.Id == id, cancellationToken);
 
             if (author is null) return false;
 

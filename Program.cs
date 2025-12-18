@@ -65,9 +65,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddControllers();
 
 // Register Services & Interfaces Layer
-builder.Services.AddScoped<
-    LearnASP.Application.Interfaces.IAuthorService,
-    LearnASP.Application.Services.Authors.AuthorService>();
+builder.Services.AddScoped<IAuthorService, AuthorService>();
+builder.Services.AddScoped<IBookService, BookService>();
 
 // Register AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
