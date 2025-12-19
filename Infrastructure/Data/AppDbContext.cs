@@ -122,8 +122,11 @@ namespace LearnASP.Infrastructure.Data
                         .HasMaxLength(100);
 
                 category.Property(category => category.Slug)
+                        .IsRequired()
                         .HasMaxLength(200);
-                
+                category.HasIndex(category => category.Slug)
+                        .IsUnique();
+
                 category.Property(category => category.Description)
                         .HasMaxLength(1000);
 
