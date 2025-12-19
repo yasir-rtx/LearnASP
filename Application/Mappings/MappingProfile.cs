@@ -11,6 +11,7 @@ namespace LearnASP.Application.Mappings
         {
             ConfigureBookMappings();
             ConfigureAuthorMappings();
+            ConfigureCategoryMappings();
         }
 
         private void ConfigureBookMappings()
@@ -28,6 +29,13 @@ namespace LearnASP.Application.Mappings
             CreateMap<Author, AuthorDto>();
             CreateMap<CreateAuthorRequest, Author>();
             CreateMap<UpdateAuthorRequest, Author>();
+        }
+
+        private void ConfigureCategoryMappings()
+        {
+            CreateMap<Category, CategoryDto>();
+            CreateMap<CreateCategoryRequest, Category>();
+            CreateMap<UpdateCategoryRequest, Category>();
         }
     }
 }
