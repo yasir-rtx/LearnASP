@@ -38,6 +38,8 @@ namespace LearnASP.Application.Services
         {
             var category = _mapper.Map<Category>(request);
 
+            var baseSlug = GenerateSlug(request.Name);
+            category.Slug = await GenerateUniqueSlugAsync(baseSlug, token);
             category.CreatedAt = DateTime.UtcNow;
             category.CreatedBy = 1;
 
@@ -53,7 +55,16 @@ namespace LearnASP.Application.Services
 
             if (category is null) return null;
 
+            var nameChanged = !string.Equals(category.Name, request.Name, StringComparison.OrdinalIgnoreCase);
+
             _mapper.Map(request, category);
+
+            if (nameChanged)
+            {
+                var baseSlug = GenerateSlug(category.Name);
+                category.Slug = await GenerateUniqueSlugAsync(baseSlug, token);
+            }
+            
             category.UpdatedAt = DateTime.UtcNow;
             category.UpdatedBy = 1;
 
@@ -72,5 +83,32 @@ namespace LearnASP.Application.Services
             await _db.SaveChangesAsync(token);
             return true;
         }
+
+        // Generate Slug
+        private static string GenerateSlug(string input)
+        {
+            var slug = input.ToLowerInvariant().Trim();
+
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9\s-]", "");
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, @"\s+", "-");
+            slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
+
+            return slug;
+        }
+        // Slug uniqueness checker
+        private async Task<string> GenerateUniqueSlugAsync(string baseSlug, CancellationToken token)
+        {
+            var slug = baseSlug;
+            var counter = 1;
+
+            while (await _db.Categories.AnyAsync(c => c.Slug == slug, token))
+            {
+                slug = $"{baseSlug}-{counter}";
+                counter++;
+            }
+
+            return slug;
+        }
+
     }
 }
