@@ -1,12 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Obscura.Models
+﻿namespace LearnASP.Domain.Entities
 {
     public class Book
     {
         public int Id { get; set; }
         public string Title { get; set; } = String.Empty;
-        public string Author { get; set; } = String.Empty;
         public string? Description { get; set; }
         public string Publisher { get; set; } = String.Empty;
         public decimal Price { get; set; } = 0.0M;
@@ -17,6 +14,12 @@ namespace Obscura.Models
         public bool IsDeleted { get; set; } = false;
         public bool IsAvailable { get; set; } = true;
         public bool IsForSale { get; set; } = true;
+
+        // Foreign key
+        public int? AuthorId { get; set; }
+
+        // Navigation property
+        public Author? Author { get; set; } = null!;
 
     }
 }

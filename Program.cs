@@ -1,19 +1,84 @@
-﻿using LearnASP.Data;
+﻿using DotNetEnv;
+using System.Text.Json;
+using LearnASP.Domain.Entities;
+using LearnASP.Infrastructure.Data;
+using LearnASP.Application.Services;
+using LearnASP.Application.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Obscura.Models;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Get String Connection
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Load .env
+if (builder.Environment.IsDevelopment())
+{
+    Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+    Env.Load();
+}
 
 // In Memory Database
 //builder.Services.AddDbContext<AppDbContext>(opt => opt.UseInMemoryDatabase("ObscuraDB"));
 //builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+// Reading Environment Variables
+// builder.Configuration.AddEnvironmentVariables();
+
+// Read .env
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT");
+var dbName = Environment.GetEnvironmentVariable("DB_NAME");
+var dbUser = Environment.GetEnvironmentVariable("DB_USER");
+var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD");
+
+// Validate .env
+void EnsureEnv(string? value, string name)
+{
+    if (string.IsNullOrWhiteSpace(value))
+        throw new InvalidOperationException($"Environment variable {name} is not set.");
+}
+
+EnsureEnv(dbHost, "DB_HOST");
+EnsureEnv(dbPort, "DB_PORT");
+EnsureEnv(dbName, "DB_NAME");
+EnsureEnv(dbUser, "DB_USER");
+EnsureEnv(dbPassword, "DB_PASSWORD");
+
+// Get String Connection
+// var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = $"Server={dbHost},{dbPort};Database={dbName};User Id={dbUser};Password={dbPassword};Encrypt=False;TrustServerCertificate=True";
+
 // Register DbContext
+// builder.Services.AddDbContext<AppDbContext>(options =>
+//     options.UseSqlServer(connectionString));
+// Best Practice based on gpt
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlServer(connectionString, sql => {
+    sql.EnableRetryOnFailure(
+        maxRetryCount: 5,
+        maxRetryDelay: TimeSpan.FromSeconds(10),
+        errorNumbersToAdd: null
+    );
+    sql.MigrationsAssembly("LearnASP.Infrastructure");
+}));
+
+// Register Controllers Layer
+builder.Services.AddControllers();
+
+// Register Services & Interfaces Layer
+builder.Services.AddScoped<IAuthorService, AuthorService>();
+builder.Services.AddScoped<IBookService, BookService>();
+
+// Register AutoMapper
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// Database HealtCheck
+builder.Services.AddHealthChecks()
+    .AddSqlServer(
+        connectionString,
+        name: "sqlserver",
+        timeout: TimeSpan.FromSeconds(5),
+        tags: new[] { "db", "sql" }
+    );
 
 // Middeleware Swagger Configuration
 builder.Services.AddEndpointsApiExplorer();
@@ -27,29 +92,9 @@ builder.Services.AddOpenApiDocument(config =>
 var app = builder.Build();
 
 // Validate DB connection at startup
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    try
-    {
-        if (db.Database.CanConnect())
-        {
-            Console.WriteLine("Database connection successful.");
-        }
-        else
-        {
-            Console.WriteLine("Cannot connect to database.");
-            throw new Exception("Database connection failed.");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database connection error: {ex.Message}");
-        throw; // stop app if DB is unreachable
-    }
-}
+// Remove
 
-// Enable Swagger Middleware
+// Enable Swagger Middleware in Development
 if (app.Environment.IsDevelopment())
 {
     app.UseOpenApi();
@@ -62,66 +107,35 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+// Controllers Routing Middleware
+app.MapControllers();
+
 // API MapGroups Configuration
 var books = app.MapGroup("/books");
 
-books.MapGet("/", GetAllBooks);
-books.MapGet("/{id}", GetBook);
-books.MapPost("/", PostBook);
-books.MapPut("/{id}", UpdateBook);
-books.MapDelete("/{id}", DeleteBook);
+// Database Health Check Endpoint
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+
+        var result = new
+        {
+            status = report.Status.ToString(),
+            database = dbName,
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                description = entry.Value.Description,
+                error = entry.Value.Exception?.Message
+            })
+        };
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(result));
+    }
+});
 
 // Run the application
 app.Run();
-
-// Get All Books
-static async Task<IResult> GetAllBooks(AppDbContext db)
-{
-    return TypedResults.Ok(await db.Books.ToListAsync());
-}
-
-// Get A Book By Id
-static async Task<IResult> GetBook(int id, AppDbContext db)
-{
-    var book = await db.Books.FindAsync(id);
-    return book is null ? TypedResults.NotFound() : TypedResults.Ok(book);
-}
-
-// Post A New Book
-static async Task<IResult> PostBook(Book book, AppDbContext db)
-{
-    db.Books.Add(book);
-    await db.SaveChangesAsync();
-
-    // Give response to client
-    return TypedResults.Created($"/books/{book.Id}", book);
-}
-
-// Update an existing Book
-static async Task<IResult> UpdateBook(int id, Book inputBook, AppDbContext db)
-{
-    var book = await db.Books.FindAsync(id);
-
-    // if todo is not found
-    if (book is null) return TypedResults.NotFound();
-
-    book.Title = inputBook.Title;
-    book.IsAvailable = inputBook.IsAvailable;
-
-    await db.SaveChangesAsync();
-
-    return TypedResults.NoContent();
-}
-
-// Delete a Book
-static async Task<IResult> DeleteBook(int id, AppDbContext db)
-{
-    if (await db.Books.FindAsync(id) is Book book)
-    {
-        db.Books.Remove(book);
-        await db.SaveChangesAsync();
-        return TypedResults.NoContent();
-    }
-
-    return TypedResults.NotFound();
-}

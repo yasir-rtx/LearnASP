@@ -41,3 +41,6 @@ TestResult*/
 *.trx
 *.coverage
 *.coveragexml
+
+# Environment Configuration
+.env
