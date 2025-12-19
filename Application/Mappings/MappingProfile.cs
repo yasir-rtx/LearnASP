@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using LearnASP.Application.DTOs.Authors;
 using LearnASP.Application.DTOs.Books;
+using LearnASP.Application.DTOs.Categories;
 using LearnASP.Domain.Entities;
 
 namespace LearnASP.Application.Mappings

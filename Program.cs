@@ -66,6 +66,7 @@ builder.Services.AddControllers();
 // Register Services & Interfaces Layer
 builder.Services.AddScoped<IAuthorService, AuthorService>();
 builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 // Register AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
