@@ -45,7 +45,7 @@ EnsureEnv(dbPassword, "DB_PASSWORD");
 
 // Get String Connection
 // var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var connectionString = $"Server={dbHost},{dbPort};Database={dbName};User Id={dbUser};Password={dbPassword};TrustServerCertificate=True";
+var connectionString = $"Server={dbHost},{dbPort};Database={dbName};User Id={dbUser};Password={dbPassword};Encrypt=False;TrustServerCertificate=True";
 
 // Register DbContext
 // builder.Services.AddDbContext<AppDbContext>(options =>
