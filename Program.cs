@@ -58,7 +58,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         maxRetryDelay: TimeSpan.FromSeconds(10),
         errorNumbersToAdd: null
     );
-    sql.MigrationsAssembly("LearnASP.Infrastructure");
 }));
 
 // Register Controllers Layer
