@@ -1,4 +1,5 @@
 using AutoMapper;
+using LearnASP.Application.Common.Exceptions;
 using LearnASP.Application.DTOs.Books;
 using LearnASP.Application.Interfaces;
 using LearnASP.Domain.Entities;
@@ -33,7 +34,7 @@ namespace LearnASP.Application.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(book => book.Id == id, token);
             
-            return book is null ? null : _mapper.Map<BookDto>(book);
+            return book is null ? throw new NotFoundException("Book not found") : _mapper.Map<BookDto>(book);
         }
 
         public async Task<BookDto> CreateAsync(CreateBookRequest request, CancellationToken token)
@@ -51,10 +52,13 @@ namespace LearnASP.Application.Services
 
         public async Task<BookDto?> UpdateAsync(int id, UpdateBookRequest request, CancellationToken token)
         {
+            var exists = await _db.Books.AnyAsync(book => book.Title == request.Title, token);
+            if (exists) throw new DomainException("Book already exists");
+
             var book = await _db.Books
                 .FirstOrDefaultAsync(book => book.Id == id, token);
 
-            if (book is null) return null;
+            if (book is null) throw new NotFoundException("Book not found");
             
             _mapper.Map(request, book);
             book.UpdatedAt = DateTime.UtcNow;
@@ -69,7 +73,7 @@ namespace LearnASP.Application.Services
             var book = await _db.Books
                 .FirstOrDefaultAsync(book => book.Id == id, token);
 
-            if (book is null) return false;
+            if (book is null) throw new NotFoundException("Book not found");
 
             _db.Books.Remove(book);
             await _db.SaveChangesAsync(token);

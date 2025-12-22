@@ -1,4 +1,5 @@
 using AutoMapper;
+using LearnASP.Application.Common.Exceptions;
 using LearnASP.Application.DTOs.Authors;
 using LearnASP.Application.Interfaces;
 using LearnASP.Domain.Entities;
@@ -18,63 +19,64 @@ namespace LearnASP.Application.Services
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<AuthorDto>> GetAllAsync(CancellationToken cancellationToken)
+        public async Task<IEnumerable<AuthorDto>> GetAllAsync(CancellationToken token)
         {
             var authors = await _db.Authors
                 .AsNoTracking()
-                .ToListAsync(cancellationToken);
+                .ToListAsync(token);
 
             return _mapper.Map<IEnumerable<AuthorDto>>(authors);
         }
 
-        public async Task<AuthorDto?> GetByIdAsync(int id, CancellationToken cancellationToken)
+        public async Task<AuthorDto> GetByIdAsync(int id, CancellationToken token)
         {
             var author = await _db.Authors
                 .AsNoTracking()
-                .FirstOrDefaultAsync(author => author.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(author => author.Id == id, token);
 
-            return author is null ? null : _mapper.Map<AuthorDto>(author);
+            return author is null ? throw new NotFoundException("Author not found") : _mapper.Map<AuthorDto>(author);
         }
 
-        public async Task<AuthorDto> CreateAsync(CreateAuthorRequest request, CancellationToken cancellationToken)
+        public async Task<AuthorDto> CreateAsync(CreateAuthorRequest request, CancellationToken token)
         {
+            var exists = await _db.Authors.AnyAsync(author => author.FullName == request.FullName, token);
+            if (exists) throw new DomainException("Author already exists");
+
             var author = _mapper.Map<Author>(request);
 
             author.CreatedAt = DateTime.UtcNow;
             author.CreatedBy = 1; // TODO: ganti IUserContext nanti
 
             _db.Authors.Add(author);
-            await _db.SaveChangesAsync(cancellationToken);
+            await _db.SaveChangesAsync(token);
 
             return _mapper.Map<AuthorDto>(author);
         }
 
-        public async Task<AuthorDto?> UpdateAsync(int id, UpdateAuthorRequest request, CancellationToken cancellationToken)
+        public async Task<AuthorDto> UpdateAsync(int id, UpdateAuthorRequest request, CancellationToken token)
         {
             var author = await _db.Authors
-                .FirstOrDefaultAsync(author => author.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(author => author.Id == id, token);
 
-            if (author is null) return null;
+            if (author is null) throw new NotFoundException("Author not found");
 
             _mapper.Map(request, author);
             author.UpdatedAt = DateTime.UtcNow;
             author.UpdatedBy = 1; // TODO: ambil dari user yang sedang login
 
-            await _db.SaveChangesAsync(cancellationToken);
+            await _db.SaveChangesAsync(token);
             return _mapper.Map<AuthorDto>(author);
         }
 
-        public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken)
+        public async Task DeleteAsync(int id, CancellationToken token)
         {
             var author = await _db.Authors
-                .FirstOrDefaultAsync(author => author.Id == id, cancellationToken);
+                .FirstOrDefaultAsync(author => author.Id == id, token);
 
-            if (author is null) return false;
+            if (author is null) throw new NotFoundException("Author not found");
 
             _db.Authors.Remove(author);
-            await _db.SaveChangesAsync(cancellationToken);
-
-            return true;
+            await _db.SaveChangesAsync(token);
         }
     }
 }

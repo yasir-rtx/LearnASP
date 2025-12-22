@@ -1,4 +1,5 @@
 using AutoMapper;
+using LearnASP.Application.Common.Exceptions;
 using LearnASP.Application.DTOs.Categories;
 using LearnASP.Application.Interfaces;
 using LearnASP.Domain.Entities;
@@ -31,11 +32,14 @@ namespace LearnASP.Application.Services
             var category = await _db.Categories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(category => category.Id == id, token);
-            return category is null ? null : _mapper.Map<CategoryDto>(category);
+            return category is null ? throw new NotFoundException("Category not found") : _mapper.Map<CategoryDto>(category);
         }
 
         public async Task<CategoryDto> CreateAsync(CreateCategoryRequest request, CancellationToken token)
         {
+            var exists = await _db.Categories.AnyAsync(category => category.Name == request.Name, token);
+            if (!exists) throw new DomainException("Category already exists");
+
             var category = _mapper.Map<Category>(request);
 
             var baseSlug = GenerateSlug(request.Name);
@@ -53,7 +57,7 @@ namespace LearnASP.Application.Services
             var category = await _db.Categories
                 .FirstOrDefaultAsync(category => category.Id == id, token);
 
-            if (category is null) return null;
+            if (category is null) throw new NotFoundException("Category not found");
 
             var nameChanged = !string.Equals(category.Name, request.Name, StringComparison.OrdinalIgnoreCase);
 
@@ -77,7 +81,7 @@ namespace LearnASP.Application.Services
             var category = await _db.Categories
                 .FirstOrDefaultAsync(category => category.Id == id, token);
             
-            if (category is null) return false;
+            if (category is null) throw new NotFoundException("Category not found");
             
             _db.Remove(category);
             await _db.SaveChangesAsync(token);
