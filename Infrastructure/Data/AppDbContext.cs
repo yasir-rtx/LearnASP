@@ -10,6 +10,7 @@ namespace LearnASP.Infrastructure.Data
 
         public DbSet<Book> Books => Set<Book>();
         public DbSet<Author> Authors => Set<Author>();
+        public DbSet<Category> Categories => Set<Category>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -107,6 +108,38 @@ namespace LearnASP.Infrastructure.Data
                 author.HasMany(author => author.Books)
                       .WithOne(book => book.Author)
                       .HasForeignKey(book => book.AuthorId);
+            });
+
+            // Category Entity Configuration
+            modelBuilder.Entity<Category>(category =>
+            {
+                category.ToTable("Categories");
+
+                category.HasKey(category => category.Id);
+
+                category.Property(category => category.Name)
+                        .IsRequired()
+                        .HasMaxLength(100);
+
+                category.Property(category => category.Slug)
+                        .IsRequired()
+                        .HasMaxLength(200);
+                category.HasIndex(category => category.Slug)
+                        .IsUnique();
+
+                category.Property(category => category.Description)
+                        .HasMaxLength(1000);
+
+                category.Property(category => category.IsActive)
+                        .HasDefaultValue(true);
+
+                category.Property(category => category.CreatedAt)
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                category.Property(category => category.CreatedBy)
+                        .HasDefaultValue(1);
+
+                // Foreign Key Relationship many to many with book
             });
         }
 
