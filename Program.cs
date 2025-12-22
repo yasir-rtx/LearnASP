@@ -1,9 +1,9 @@
 ﻿using DotNetEnv;
 using System.Text.Json;
-using LearnASP.Domain.Entities;
 using LearnASP.Infrastructure.Data;
 using LearnASP.Application.Services;
 using LearnASP.Application.Interfaces;
+using LearnASP.Presentation.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 
@@ -106,6 +106,9 @@ if (app.Environment.IsDevelopment())
         config.DocExpansion = "list";
     });
 }
+
+// Register Middleware
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Controllers Routing Middleware
 app.MapControllers();
