@@ -1,15 +1,13 @@
-﻿using AutoMapper;
+﻿using LearnASP.Application.Common.Responses;
 using LearnASP.Application.DTOs.Authors;
 using LearnASP.Application.Interfaces;
-using LearnASP.Domain.Entities;
-using LearnASP.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace LearnASP.Presentation.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    // [Route("api/[controller]")] // Not Best Practice
+    [Route("api/authors")]
     [Produces("application/json")]
     public class AuthorController : ControllerBase
     {
@@ -24,53 +22,61 @@ namespace LearnASP.Presentation.Controllers
 
         /// <summary> Get All Authors </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<AuthorDto>>> GetAllAuthors(CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<AuthorDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllAuthors(CancellationToken token)
         {
-            var authors = await _authorService.GetAllAsync(cancellationToken);
-            return Ok(authors);
+            var authors = await _authorService.GetAllAsync(token);
+            return Ok(ApiResponse<IEnumerable<AuthorDto>>.SuccessResponse(authors, "Authors retrieved successfully"));
         }
 
         /// <summary> Get An Author By Id </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<AuthorDto>> GetAuthorById(int id, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ApiResponse<AuthorDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetAuthorById(int id, CancellationToken token)
         {
-            var author = await _authorService.GetByIdAsync(id, cancellationToken);
-            return author is null ? NotFound() : Ok(author);
+            var author = await _authorService.GetByIdAsync(id, token);
+            return author is null 
+                ? NotFound(ApiResponse<object>.ErrorResponse("Author not found"))
+                : Ok(ApiResponse<AuthorDto>.SuccessResponse(author, "Author retrieved successfully"));
         }
 
         /// <summary> Create A New Author </summary>
         [HttpPost]
-        public async Task<ActionResult<CreateAuthorRequest>> CreateAuthor([FromBody] CreateAuthorRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ApiResponse<AuthorDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> CreateAuthor([FromBody] CreateAuthorRequest request, CancellationToken token)
         {
-            var author = await _authorService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetAuthorById), new { id = author.Id }, author);
+            var author = await _authorService.CreateAsync(request, token);
+            return CreatedAtAction(
+                 nameof(GetAuthorById), new { id = author.Id }, 
+                 ApiResponse<AuthorDto>.SuccessResponse(author, "Author created successfully"));
         }
 
         /// <summary> Update An Author </summary>
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateAuthor(int id, [FromBody] UpdateAuthorRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ApiResponse<AuthorDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateAuthor(int id, [FromBody] UpdateAuthorRequest request, CancellationToken token)
         {
-            var updatedDto = await _authorService.UpdateAsync(id, request, cancellationToken);
-            if (updatedDto is null) return NotFound();
-
-            return Ok(new
-            {
-                Message = "Author updated successfully",
-                data = updatedDto
-            });
+            var updated = await _authorService.UpdateAsync(id, request, token);
+            return updated is null
+                ? NotFound(ApiResponse<object>.ErrorResponse("Author not found"))
+                : Ok(ApiResponse<AuthorDto>.SuccessResponse(updated, "Author updated successfully"));
         }
 
         /// <summary> Delete An Author </summary>
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteAuthor(int id, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteAuthor(int id, CancellationToken token)
         {
-            var deletedDto = await _authorService.DeleteAsync(id, cancellationToken);
-            if (!deletedDto) return NotFound();
-
-            return Ok(new
-            {
-                Message = $"Author with ID:{id} deleted successfully"
-            });
+            var deleted = await _authorService.DeleteAsync(id, token);
+            return !deleted
+                ? NotFound(ApiResponse<object>.ErrorResponse("Author not found"))
+                : Ok(ApiResponse<object?>.SuccessResponse(null, "Author deleted successfully"));
         }
     }
 }

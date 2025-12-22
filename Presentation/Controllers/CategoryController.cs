@@ -1,3 +1,4 @@
+using LearnASP.Application.Common.Responses;
 using LearnASP.Application.DTOs.Categories;
 using LearnASP.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -18,42 +19,61 @@ namespace LearnASP.Presentation.Controllers
 
         /// <summary> Get All Categories </summary>
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken token)
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllCategories(CancellationToken token)
         {
             var categories = await _categoryService.GetAllAsync(token);
-            return categories is null ? NotFound() : Ok(categories);
+            return Ok(ApiResponse<IEnumerable<CategoryDto>>.SuccessResponse(categories, "Categories retrieved successfully"));
         }
 
-        /// <summary> Get An Category By Id </summary>
+        /// <summary> Get A Category By Id </summary>
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id, CancellationToken token)
+        [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetCategoryById(int id, CancellationToken token)
         {
             var category = await _categoryService.GetByIdAsync(id, token);
-            return category is null ? NotFound() : Ok(category);
+            return category is null 
+                ? NotFound(ApiResponse<object>.ErrorResponse("Category not found"))
+                : Ok(ApiResponse<CategoryDto>.SuccessResponse(category, "Category retrieved successfully"));
         }
 
         /// <summary> Create A New Category </summary>
         [HttpPost]
-        public async Task<IActionResult> Create(CreateCategoryRequest request, CancellationToken token)
+        [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequest request, CancellationToken token)
         {
             var category = await _categoryService.CreateAsync(request, token);
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
+            return CreatedAtAction(
+                 nameof(GetCategoryById), new { id = category.Id }, 
+                 ApiResponse<CategoryDto>.SuccessResponse(category, "Category created successfully"));
         }
 
-        /// <summary> Update An Category </summary>
+        /// <summary> Update A Category </summary>
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, UpdateCategoryRequest request, CancellationToken token)
+        [ProducesResponseType(typeof(ApiResponse<CategoryDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryRequest request, CancellationToken token)
         {
-            var category = await _categoryService.UpdateAsync(id, request, token);
-            return category is null ? NotFound() : Ok(category);
+            var updated = await _categoryService.UpdateAsync(id, request, token);
+            return updated is null
+                ? NotFound(ApiResponse<object>.ErrorResponse("Category not found"))
+                : Ok(ApiResponse<CategoryDto>.SuccessResponse(updated, "Category updated successfully"));
         }
 
         /// <summary> Delete A Category </summary>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, CancellationToken token)
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteCategory(int id, CancellationToken token)
         {
             var deleted = await _categoryService.DeleteAsync(id, token);
-            return deleted ? Ok() : NotFound();
+            return !deleted
+                ? NotFound(ApiResponse<object>.ErrorResponse("Category not found"))
+                : Ok(ApiResponse<object?>.SuccessResponse(null, "Category deleted successfully"));
         }
     }
 }

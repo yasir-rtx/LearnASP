@@ -1,13 +1,13 @@
 ﻿using LearnASP.Application.Common.Responses;
 using LearnASP.Application.DTOs.Books;
 using LearnASP.Application.Interfaces;
-using LearnASP.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LearnASP.Presentation.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    // [Route("api/[controller]")] // Not Best Practice
+    [Route("api/books")]
     [Produces("application/json")]
     public class BookController : ControllerBase
     {
@@ -37,7 +37,7 @@ namespace LearnASP.Presentation.Controllers
         {
             var book = await _bookService.GetByIdAsync(id, token);
             return book is null 
-                ? NotFound(ApiResponse<object>.ErrorResponse($"Book with ID:{id} not found"))
+                ? NotFound(ApiResponse<object>.ErrorResponse("Book not found"))
                 : Ok(ApiResponse<BookDto>.SuccessResponse(book, "Book retrieved successfully"));
         }
 
@@ -63,8 +63,8 @@ namespace LearnASP.Presentation.Controllers
         {
             var updated = await _bookService.UpdateAsync(id, request, token);
             return updated is null
-                ? NotFound(ApiResponse<object>.ErrorResponse($"Book with ID:{id} not found"))
-                : Ok(ApiResponse<BookDto>.SuccessResponse(updated, $"Book with ID:{id} updated successfully"));
+                ? NotFound(ApiResponse<object>.ErrorResponse($"Book not found"))
+                : Ok(ApiResponse<BookDto>.SuccessResponse(updated, "Book updated successfully"));
         }
 
         /// <summary> Delete a Book </summary>
@@ -75,8 +75,8 @@ namespace LearnASP.Presentation.Controllers
         {
             var deleted = await _bookService.DeleteAsync(id, token);
             return !deleted
-                ? NotFound(ApiResponse<object>.ErrorResponse($"Book with ID:{id} not found"))
-                : Ok(ApiResponse<object>.SuccessResponse(null, $"Book with ID:{id} deleted successfully"));
+                ? NotFound(ApiResponse<object>.ErrorResponse("Book not found"))
+                : Ok(ApiResponse<object?>.SuccessResponse(null, "Book deleted successfully"));
         }
     }
 }
