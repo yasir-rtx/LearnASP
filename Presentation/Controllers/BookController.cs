@@ -1,99 +1,82 @@
-﻿using AutoMapper;
-using LearnASP.Application.DTOs.Authors;
+﻿using LearnASP.Application.Common.Responses;
 using LearnASP.Application.DTOs.Books;
+using LearnASP.Application.Interfaces;
 using LearnASP.Domain.Entities;
-using LearnASP.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using YamlDotNet.Core.Tokens;
 
 namespace LearnASP.Presentation.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    public class BookController : Controller
+    public class BookController : ControllerBase
     {
         // Dependency Injection
-        private readonly AppDbContext _db;
-        private readonly IMapper _mapper;
+        private readonly IBookService _bookService;
 
         // Constructor
-        public BookController(AppDbContext context, IMapper mapper)
+        public BookController(IBookService bookService)
         {
-            _db = context;
-            _mapper = mapper;
+            _bookService = bookService;
         }
 
         /// <summary> Get All Books </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BookDto>>> GetAllBooks()
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<BookDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllBooks(CancellationToken token)
         {
-            var books = await _db.Books
-                .Include(Book => Book.Author)
-                .ToListAsync();
-            return books is null ? NotFound() : Ok(_mapper.Map<IEnumerable<BookDto>>(books));
+            var books = await _bookService.GetAllAsync(token);
+            return Ok(ApiResponse<IEnumerable<BookDto>>.SuccessResponse(books, "Books retrieved successfully"));
         }
 
         /// <summary> Get A Book By Id </summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Book>> GetBookById(int id)
+        [ProducesResponseType(typeof(ApiResponse<BookDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetBookById(int id, CancellationToken token)
         {
-            var book = await _db.Books.FindAsync(id);
-            return book is null ? NotFound() : Ok(_mapper.Map<BookDto>(book));
+            var book = await _bookService.GetByIdAsync(id, token);
+            return book is null 
+                ? NotFound(ApiResponse<object>.ErrorResponse($"Book with ID:{id} not found"))
+                : Ok(ApiResponse<BookDto>.SuccessResponse(book, "Book retrieved successfully"));
         }
 
         /// <summary> Post A New Book </summary>
         [HttpPost]
-        public async Task<ActionResult<Book>> CreateBook([FromBody] CreateBookRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ApiResponse<BookDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> CreateBook([FromBody] CreateBookRequest request, CancellationToken token)
         {
-            var book = _mapper.Map<Book>(request);
-
-            book.CreatedAt = DateTime.UtcNow;
-            book.CreatedBy = 1; // TODO: taken from logged in user
-
-            _db.Books.Add(book);
-            await _db.SaveChangesAsync(cancellationToken);
-
-            var bookDto = _mapper.Map<BookDto>(book);
-            return CreatedAtAction(nameof(GetBookById), new { id = book.Id }, bookDto);
+            var book = await _bookService.CreateAsync(request, token);
+            return CreatedAtAction(
+                 nameof(GetBookById), new { id = book.Id }, 
+                 ApiResponse<BookDto>.SuccessResponse(book, "Book created successfully"));
         }
 
         /// <summary> Update an Existing Book </summary>
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateBook(int id, [FromBody] UpdateBookRequest request, CancellationToken cancellationToken)
+        [ProducesResponseType(typeof(ApiResponse<BookDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateBook(int id, [FromBody] UpdateBookRequest request, CancellationToken token)
         {
-            var book = await _db.Books.FindAsync(id);
-            if (book is null) return NotFound();
-
-            _mapper.Map(request, book);
-            book.UpdatedAt = DateTime.UtcNow;
-            book.UpdatedBy = 1; // TODO: taken from logged in user
-
-            _db.Books.Update(book);
-            await _db.SaveChangesAsync(cancellationToken);
-
-            var updateDto = _mapper.Map<BookDto>(book);
-            return Ok(new
-            {
-                Message = "Book updated successfully",
-                data = updateDto
-            });
+            var updated = await _bookService.UpdateAsync(id, request, token);
+            return updated is null
+                ? NotFound(ApiResponse<object>.ErrorResponse($"Book with ID:{id} not found"))
+                : Ok(ApiResponse<BookDto>.SuccessResponse(updated, $"Book with ID:{id} updated successfully"));
         }
 
         /// <summary> Delete a Book </summary>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteBook(int id)
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteBook(int id, CancellationToken token)
         {
-            var book = await _db.Books.FindAsync(id);
-            if (book is null) return NotFound();
-
-            _db.Books.Remove(book);
-            await _db.SaveChangesAsync();
-            return Ok(new
-            {
-                Message = $"Author with ID:{id} deleted successfully"
-            });
+            var deleted = await _bookService.DeleteAsync(id, token);
+            return !deleted
+                ? NotFound(ApiResponse<object>.ErrorResponse($"Book with ID:{id} not found"))
+                : Ok(ApiResponse<object>.SuccessResponse(null, $"Book with ID:{id} deleted successfully"));
         }
     }
 }
