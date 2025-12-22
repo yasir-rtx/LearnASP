@@ -36,9 +36,7 @@ namespace LearnASP.Presentation.Controllers
         public async Task<IActionResult> GetBookById(int id, CancellationToken token)
         {
             var book = await _bookService.GetByIdAsync(id, token);
-            return book is null 
-                ? NotFound(ApiResponse<object>.ErrorResponse("Book not found"))
-                : Ok(ApiResponse<BookDto>.SuccessResponse(book, "Book retrieved successfully"));
+            return Ok(ApiResponse<BookDto>.SuccessResponse(book, "Book retrieved successfully"));
         }
 
         /// <summary> Post A New Book </summary>
@@ -62,9 +60,7 @@ namespace LearnASP.Presentation.Controllers
         public async Task<IActionResult> UpdateBook(int id, [FromBody] UpdateBookRequest request, CancellationToken token)
         {
             var updated = await _bookService.UpdateAsync(id, request, token);
-            return updated is null
-                ? NotFound(ApiResponse<object>.ErrorResponse($"Book not found"))
-                : Ok(ApiResponse<BookDto>.SuccessResponse(updated, "Book updated successfully"));
+            return Ok(ApiResponse<BookDto>.SuccessResponse(updated, "Book updated successfully"));
         }
 
         /// <summary> Delete a Book </summary>
@@ -74,9 +70,7 @@ namespace LearnASP.Presentation.Controllers
         public async Task<IActionResult> DeleteBook(int id, CancellationToken token)
         {
             var deleted = await _bookService.DeleteAsync(id, token);
-            return !deleted
-                ? NotFound(ApiResponse<object>.ErrorResponse("Book not found"))
-                : Ok(ApiResponse<object?>.SuccessResponse(null, "Book deleted successfully"));
+            return Ok(ApiResponse<object?>.SuccessResponse(null, "Book deleted successfully"));
         }
     }
 }

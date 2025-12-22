@@ -33,9 +33,7 @@ namespace LearnASP.Presentation.Controllers
         public async Task<IActionResult> GetCategoryById(int id, CancellationToken token)
         {
             var category = await _categoryService.GetByIdAsync(id, token);
-            return category is null 
-                ? NotFound(ApiResponse<object>.ErrorResponse("Category not found"))
-                : Ok(ApiResponse<CategoryDto>.SuccessResponse(category, "Category retrieved successfully"));
+            return Ok(ApiResponse<CategoryDto>.SuccessResponse(category, "Category retrieved successfully"));
         }
 
         /// <summary> Create A New Category </summary>
@@ -59,9 +57,7 @@ namespace LearnASP.Presentation.Controllers
         public async Task<IActionResult> UpdateCategory(int id, [FromBody] UpdateCategoryRequest request, CancellationToken token)
         {
             var updated = await _categoryService.UpdateAsync(id, request, token);
-            return updated is null
-                ? NotFound(ApiResponse<object>.ErrorResponse("Category not found"))
-                : Ok(ApiResponse<CategoryDto>.SuccessResponse(updated, "Category updated successfully"));
+            return Ok(ApiResponse<CategoryDto>.SuccessResponse(updated, "Category updated successfully"));
         }
 
         /// <summary> Delete A Category </summary>
@@ -71,9 +67,7 @@ namespace LearnASP.Presentation.Controllers
         public async Task<IActionResult> DeleteCategory(int id, CancellationToken token)
         {
             var deleted = await _categoryService.DeleteAsync(id, token);
-            return !deleted
-                ? NotFound(ApiResponse<object>.ErrorResponse("Category not found"))
-                : Ok(ApiResponse<object?>.SuccessResponse(null, "Category deleted successfully"));
+            return Ok(ApiResponse<object?>.SuccessResponse(null, "Category deleted successfully"));
         }
     }
 }
