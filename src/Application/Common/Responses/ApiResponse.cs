@@ -7,7 +7,7 @@ namespace LearnASP.Application.Common.Responses
         public T? Data { get; set; }
         public IEnumerable<string>? Errors { get; set; }
 
-        public static ApiResponse<T> SuccessResponse(T data, string message = "Request successful")
+        public static ApiResponse<T> SuccessResponse(T? data, string message = "Request successful")
         {
             return new ApiResponse<T>
             {
