@@ -70,7 +70,16 @@ namespace LearnASP.Presentation.Controllers
         public async Task<IActionResult> DeleteBook(int id, CancellationToken token)
         {
             var deleted = await _bookService.DeleteAsync(id, token);
-            return Ok(ApiResponse<object?>.SuccessResponse(null, "Book deleted successfully"));
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Book deleted successfully"));
+        }
+
+        /// <summary> Delete all Books </summary>
+        [HttpDelete("all-delete")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteAllBook(CancellationToken token)
+        {
+            await _bookService.DeleteAllAsync(token);
+            return Ok(ApiResponse<object>.SuccessResponse(null, "All Books deleted successfully"));
         }
     }
 }

@@ -7,5 +7,6 @@ namespace LearnASP.Application.Interfaces{
         Task<AuthorDto> CreateAsync(CreateAuthorRequest request, CancellationToken cancellationToken);
         Task<AuthorDto> UpdateAsync(int id, UpdateAuthorRequest request, CancellationToken cancellationToken);
         Task DeleteAsync(int id, CancellationToken cancellationToken);
+        Task DeleteAllAsync(CancellationToken cancellationToken);
     }
 }

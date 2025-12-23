@@ -88,6 +88,15 @@ namespace LearnASP.Application.Services
             return true;
         }
 
+        public async Task DeleteAllAsync(CancellationToken token)
+        {
+            var categories = await _db.Categories.ToListAsync(token);
+            if (!categories.Any()) throw new NotFoundException("No categories found to delete");
+
+            _db.RemoveRange(categories);
+            await _db.SaveChangesAsync(token);
+        }
+
         // Generate Slug
         private static string GenerateSlug(string input)
         {
@@ -99,6 +108,7 @@ namespace LearnASP.Application.Services
 
             return slug;
         }
+
         // Slug uniqueness checker
         private async Task<string> GenerateUniqueSlugAsync(string baseSlug, CancellationToken token)
         {
@@ -113,6 +123,5 @@ namespace LearnASP.Application.Services
 
             return slug;
         }
-
     }
 }

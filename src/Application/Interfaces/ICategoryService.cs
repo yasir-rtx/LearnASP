@@ -9,5 +9,6 @@ namespace LearnASP.Application.Interfaces
         Task<CategoryDto> CreateAsync(CreateCategoryRequest request, CancellationToken token);
         Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryRequest request, CancellationToken token);
         Task<bool> DeleteAsync(int id, CancellationToken token);
+        Task DeleteAllAsync(CancellationToken token);
     }
 }

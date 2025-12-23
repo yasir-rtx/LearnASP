@@ -86,5 +86,16 @@ namespace LearnASP.Presentation.Controllers
             return Ok(ApiResponse<object>
                 .SuccessResponse(null, "Author deleted successfully"));
         }
+
+        /// <summary> Delete all authors </summary>
+        [HttpDelete("all-delete")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteAllAuthors(CancellationToken token)
+        {
+            await _authorService.DeleteAllAsync(token);
+
+            return Ok(ApiResponse<object>
+                .SuccessResponse(null, "All authors deleted successfully"));
+        }
     }
 }

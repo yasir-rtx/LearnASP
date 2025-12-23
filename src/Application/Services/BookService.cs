@@ -80,5 +80,15 @@ namespace LearnASP.Application.Services
 
             return true;
         }
+
+        public async Task DeleteAllAsync(CancellationToken token)
+        {
+            var books = await _db.Books.ToListAsync(token);
+
+            if (!books.Any()) throw new NotFoundException("No books found to delete");
+
+            _db.Books.RemoveRange(books);
+            await _db.SaveChangesAsync(token);
+        }
     }
 }

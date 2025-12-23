@@ -78,5 +78,15 @@ namespace LearnASP.Application.Services
             _db.Authors.Remove(author);
             await _db.SaveChangesAsync(token);
         }
+
+        public async Task DeleteAllAsync(CancellationToken token)
+        {
+            var authors = await _db.Authors.ToListAsync(token);
+
+            if (!authors.Any()) throw new NotFoundException("No authors found to delete");
+
+            _db.Authors.RemoveRange(authors);
+            await _db.SaveChangesAsync(token);
+        }
     }
 }

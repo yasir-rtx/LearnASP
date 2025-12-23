@@ -69,5 +69,14 @@ namespace LearnASP.Presentation.Controllers
             var deleted = await _categoryService.DeleteAsync(id, token);
             return Ok(ApiResponse<object?>.SuccessResponse(null, "Category deleted successfully"));
         }
+
+        /// <summary> Delete All Categories </summary>
+        [HttpDelete("all-delete")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> DeleteAllCategories(CancellationToken token)
+        {
+            await _categoryService.DeleteAllAsync(token);
+            return Ok(ApiResponse<object?>.SuccessResponse(null, "All Categories deleted successfully"));
+        }
     }
 }
